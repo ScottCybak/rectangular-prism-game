@@ -26,7 +26,8 @@ export type XY = [number /* centerX */, number /* centerY */];
 
 export abstract class ObjectBase<T extends ObjectBaseModel> {
 
-    abstract create(): this
+    abstract create(): this;
+    abstract doesPointIntersect(point: Coordinates, radius: number): boolean;
     
     protected element = document.createElement('div');
 
@@ -59,16 +60,6 @@ export abstract class ObjectBase<T extends ObjectBaseModel> {
             center: [x + (width / 2), y + (height / 2)]
         }
     }
-
-    recalculate([centerX, centerY]: XY) {
-        // const e = this.element;
-        // const originX = 50 + (100 - (Math.round(this.limits.center[0] / centerX * 100000) / 1000)) * 25;
-        // const originY = 50 + (100 - (Math.round(this.limits.center[1] / centerY * 100000) / 1000)) * 25;
-        // e.style.setProperty('-webkit-perspective-origin-x', `${originX}%`);
-        // e.style.setProperty('-webkit-perspective-origin-y', `${originY}%`);
-    }
-
-    abstract doesPointIntersect(point: Coordinates): boolean;
 
     place(appendAsChildTo: HTMLElement) {
         appendAsChildTo.appendChild(this.element);

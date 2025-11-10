@@ -19,6 +19,8 @@ export class Game {
     private tickInterval = new Watched(new Date().getTime());
 
     tick = Watched.combine(this.paused, this.tickInterval).derive(([paused, tick]) => paused ? false : tick);
+    
+    private playerRadius = this.worldData.derive(data => data?.playerRadius ?? 1);
 
     private world = new World(this);
 
@@ -26,12 +28,12 @@ export class Game {
         setInterval(() => {
             this.tickInterval.set(new Date().getTime());
         }, 1000 / 30);
+        this.playerRadius.watch(radius => this.element?.style.setProperty('--pl-rad', `${radius ?? 0}px`))
     }
 
     ready = Watched.combine(
         this.world.ready
     ).derive(r => {
-        console.log('ready?', r);
         return r.every(v => !!v)
     });
 

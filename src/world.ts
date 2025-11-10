@@ -9,13 +9,6 @@ import { objectClasses, ObjectModel } from "object-classes";
 import { Watched } from "watched";
 import { WorldData } from "world-data";
 
-// notes:
-// 
-// -  we could, while we're adding pieces, calculate which "tile" they
-//    are on, then filter the items to the ones the viewport can render, and draw those
-//    this should reduce the number of recalculates.  anything not in the view should
-//      probably detach.
-
 export class World {
 
     private domId = 'world';
@@ -31,6 +24,7 @@ export class World {
     });
 
     private speed: MinMax = [1,2];
+    private playerRadius = 0;
 
     constructor(
         private game: Game,
@@ -49,6 +43,7 @@ export class World {
         const { width, length, perspective } = data;
         const { domId, element } = this;
         this.speed = [...data.speed];
+        this.playerRadius = data.playerRadius;
         
         element.id = domId;
         element.style.cssText = `
@@ -66,7 +61,6 @@ export class World {
 
         // ok, connect to the page finally, since the heavy lifting is done
         this.game.element?.appendChild(element);
-        console.log('hrm->', this.element)
 
         // set our spawn position
         this.currentPosition.set(data.spawn);
@@ -102,7 +96,7 @@ export class World {
     }
 
     private canMove(to: Coordinates): false | Coordinates {
-        const intersections = this.loadedObjects.filter(o => o.doesPointIntersect(to));
+        const intersections = this.loadedObjects.filter(o => o.doesPointIntersect(to, this.playerRadius));
         if (intersections.length) {
             // todo; this should be smarter - if moving sw against a flat NS oriented plane, we should continue south
             return false;

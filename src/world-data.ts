@@ -10,4 +10,5 @@ export interface WorldData {
     objects: ObjectModel[];
     perspective: number;
     speed: MinMax;
+    playerRadius: number;
 }

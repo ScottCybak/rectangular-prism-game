@@ -25,15 +25,17 @@ export class CuboidObject extends ObjectBase<CuboidObjectModel> {
 
     private precomputedCuboid!: PrecomputedCuboid;
 
-    doesPointIntersect(player: Coordinates): boolean {
+    doesPointIntersect(point: Coordinates, radius: number): boolean {
         const cuboid = this.precomputedCuboid;
+
+        // Translate player center into cuboid-local coordinates
         const local: Coordinates = [
-            player[0] - cuboid.center[0],
-            player[1] - cuboid.center[1],
-            player[2] - cuboid.center[2],
+            point[0] - cuboid.center[0],
+            point[1] - cuboid.center[1],
+            point[2] - cuboid.center[2],
         ];
 
-        // Apply inverse rotation
+        // Apply inverse rotation to align with cuboid axes
         const localRotated: Coordinates = [
             local[0] * cuboid.inverseRotationMatrix[0][0] +
             local[1] * cuboid.inverseRotationMatrix[0][1] +
@@ -46,12 +48,21 @@ export class CuboidObject extends ObjectBase<CuboidObjectModel> {
             local[2] * cuboid.inverseRotationMatrix[2][2],
         ];
 
-        // Inside test
-        return (
-            Math.abs(localRotated[0]) <= cuboid.halfSize[0] &&
-            Math.abs(localRotated[1]) <= cuboid.halfSize[1] &&
-            Math.abs(localRotated[2]) <= cuboid.halfSize[2]
-        );
+        // Clamp player center to cuboid bounds to find closest point on cuboid
+        const closest: Coordinates = [
+            Math.max(-cuboid.halfSize[0], Math.min(localRotated[0], cuboid.halfSize[0])),
+            Math.max(-cuboid.halfSize[1], Math.min(localRotated[1], cuboid.halfSize[1])),
+            Math.max(-cuboid.halfSize[2], Math.min(localRotated[2], cuboid.halfSize[2])),
+        ];
+
+        // Compute squared distance from sphere center to closest point
+        const dx = localRotated[0] - closest[0];
+        const dy = localRotated[1] - closest[1];
+        const dz = localRotated[2] - closest[2];
+        const distanceSquared = dx * dx + dy * dy + dz * dz;
+
+        // Intersect if distance <= radius
+        return distanceSquared <= radius * radius;
     }
 
     create() {

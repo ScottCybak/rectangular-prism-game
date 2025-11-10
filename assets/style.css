@@ -74,19 +74,16 @@ body, body * {
     &:before, &:after {
         content: '';
         position: fixed;
-        background: magenta;
     }
     &:before {
-        top: calc(50% - .5px);
-        height: 1px;
-        width: 10px;
-        left: calc(50% - 5px);
-    }
-    &:after {
-        left: calc(50% - .5px);
-        width: 1px;
-        height: 10px;
-        top: calc(50% - 5px);
+        top: calc(50% - (var(--pl-rad)));
+        left: calc(50% - (var(--pl-rad)));
+        width: calc(var(--pl-rad) * 2);
+        height: calc(var(--pl-rad) * 2);
+        border: 2px solid magenta;
+        border-radius: 100%;
+        box-sizing: border-box;
+        outline: 2px dashed magenta;
     }
 }
 #world {
