@@ -43,7 +43,7 @@ export class World {
     async loadData(data: WorldData) {
         this.ready.set(false);
 
-        const { width, length } = data;
+        const { width, length, perspective } = data;
         const { domId, element } = this;
         const [x, y] = data.spawn;
         
@@ -54,6 +54,7 @@ export class World {
             position: absolute;
             top: 0;
             left: 0;
+            --p: ${perspective}px;
         `;
 
         if (data.objects?.length) {
@@ -62,6 +63,7 @@ export class World {
 
         // ok, connect to the page finally, since the heavy lifting is done
         this.game.element?.appendChild(element);
+        console.log('hrm->', this.element)
 
         // set our spawn position
         this.currentPosition.set(data.spawn);

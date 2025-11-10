@@ -1,10 +1,11 @@
-import { Coordinates } from "coordinates";
+import { XY } from "object-base";
 import { ObjectModel } from "object-classes";
 
 export interface WorldData {
     id: string;
     width: number;
     length: number;
-    spawn: [number, number];
+    spawn: XY;
     objects: ObjectModel[];
+    perspective: number;
 }

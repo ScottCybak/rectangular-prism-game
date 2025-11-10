@@ -92,7 +92,7 @@ body, body * {
 #world {
     position: absolute;
     transform-style: preserve-3d; 
-    perspective: 400px;
+    perspective: var(--p);
 }
 
 .object {
@@ -103,4 +103,5 @@ body, body * {
     top: var(--y);
     width: var(--w);
     height: var(--l);
+    transform: translateZ(var(--z));
 }
