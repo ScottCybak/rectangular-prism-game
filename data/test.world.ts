@@ -1,6 +1,23 @@
 import { OBJECT_TYPE } from "object-type";
 import { WorldData } from "world-data";
 
+const makeColorHelper = (color: string) => {
+    const colorCss = `background: ${color};`;
+    return {
+        left: colorCss,
+        right: colorCss,
+        top: colorCss,
+        bottom: colorCss,
+        front: colorCss,
+        back: colorCss,
+    }
+}
+
+const helpers = {
+    ivory: makeColorHelper('ivory'),
+    grey: makeColorHelper('grey'),
+}
+
 export const testWorld: WorldData = {
     id: 'test',
     width: 10000,
@@ -80,10 +97,128 @@ export const testWorld: WorldData = {
             size: [100, 100, 100],
             position: [5000, 4700, 0],
         },
-        {  // try one down
-            type: OBJECT_TYPE.CUBOID,
-            size: [100, 100, 100],
+        {  // fancy skyscraper b
+            type: OBJECT_TYPE.GROUP,
+            size: [0, 0, 0],
             position: [5000, 5200, 0],
+            objects: [
+                {  // corner column TL
+                    type: OBJECT_TYPE.CUBOID,
+                    size: [30, 30, 175],
+                    position: [0, 0, 0],
+                    style: {
+                        ...helpers.ivory,
+                        front: 'background: grey;'
+                    },
+                },
+                { // corner column TR
+                    type: OBJECT_TYPE.CUBOID,
+                    size: [30, 30, 175],
+                    position: [200, 0, 0],
+                    style: {
+                        ...helpers.ivory,
+                        front: 'background: grey;'
+                    },
+                },
+                { // corner column BL
+                    type: OBJECT_TYPE.CUBOID,
+                    size: [30, 30, 175],
+                    position: [0, 150, 0],
+                    style: {
+                        ...helpers.ivory,
+                        front: 'background: grey;'
+                    },
+                },
+                { // corner column BR
+                    type: OBJECT_TYPE.CUBOID,
+                    size: [30, 30, 175],
+                    position: [200, 150, 0],
+                    style: {
+                        ...helpers.ivory,
+                        front: 'background: grey;'
+                    },
+                },
+                {  // 1st floor (draw order is important here, for clipping.. maybe?)
+                    type: OBJECT_TYPE.CUBOID,
+                    size: [200, 150, 150],
+                    position: [15, 15, 0],
+                    style: {
+                        ...helpers.grey
+                    },
+                },
+                { // lets try nesting .. .again
+                    type: OBJECT_TYPE.GROUP,
+                    size: [0, 0, 0],
+                    position: [15, 15, 150],
+                    objects: [
+                        { // west
+                            type: OBJECT_TYPE.CUBOID,
+                            size: [5, 140, 15],
+                            position: [5, 5, 0],
+                            style: helpers.ivory, // what happens?
+                        },
+                        { // east
+                            type: OBJECT_TYPE.CUBOID,
+                            size: [5, 140, 15],
+                            position: [190, 5, 0],
+                            style: helpers.ivory,
+                        },
+                        { // north
+                            type: OBJECT_TYPE.CUBOID,
+                            size: [180, 5, 15],
+                            position: [10, 5, 0],
+                            style: helpers.ivory,
+                        },
+                        { // south
+                            type: OBJECT_TYPE.CUBOID,
+                            size: [180, 5, 15],
+                            position: [10, 140, 0],
+                            style: helpers.ivory,
+                        },
+                    ],
+                },
+
+                {
+                    // 2nd floor main
+                    type: OBJECT_TYPE.GROUP,
+                    size: [0, 0, 0], //[150, 100, 150],
+                    position: [40, 40, 150],
+                    objects: [
+                        {
+                            type: OBJECT_TYPE.CUBOID,
+                            size: [150, 100, 25],
+                            position: [0, 0, 0],
+                            style: helpers.ivory,
+                        },
+                        {
+                            type: OBJECT_TYPE.CUBOID,
+                            size: [120, 70, 125],
+                            position: [15, 15, 25],
+                            style: helpers.grey,
+                        },
+                    ],
+                },
+                {
+                    // 3rd floor
+                    type: OBJECT_TYPE.GROUP,
+                    size: [100, 50, 25],
+                    position: [65, 65, 300],
+                    objects: [
+                        {
+                            type: OBJECT_TYPE.CUBOID,
+                            size: [100, 50, 25],
+                            position: [0, 0, 0],
+                            style: helpers.ivory,
+                        },
+                        {
+                            type: OBJECT_TYPE.CUBOID,
+                            size: [5, 5, 125],
+                            position: [47.5, 22.5, 25],
+                            style: helpers.grey,
+                        }
+                    ]
+                }
+            ]
         }
     ],
 };
