@@ -1,5 +1,6 @@
+import { Camera } from "camera";
 import { COMMAND } from "command";
-import { Environment } from "environment";
+import { createDiv } from "create-div";
 import { GameData } from "game-data";
 import { getJson } from "get-json";
 import { Watched } from "watched";
@@ -8,7 +9,10 @@ import { WorldData } from "world-data";
 
 export class Game {
 
-    element = document.getElementById('root');
+    static perspectiveCssVar = '--p';
+    static playerRadiusCssVar = '--pl-rad';
+
+    element = createDiv('game');
 
     private gameData = new Watched<GameData | undefined>(undefined);
 
@@ -20,26 +24,40 @@ export class Game {
 
     tick = Watched.combine(this.paused, this.tickInterval).derive(([paused, tick]) => paused ? false : tick);
     
-    private playerRadius = this.worldData.derive(data => data?.playerRadius ?? 1);
+    private playerRadius = this.worldData.derive(d => d?.playerRadius ?? 1);
 
-    private world = new World(this);
+    private perspective = this.worldData.derive(d => d?.perspective ?? 400);
+    
+    world = new World(this);
 
-    constructor(public commands: Watched<Set<COMMAND>>) {
+    constructor(
+        public commands: Watched<Set<COMMAND>>,
+    ) {
         setInterval(() => {
             this.tickInterval.set(new Date().getTime());
         }, 1000 / 30);
-        this.playerRadius.watch(radius => this.element?.style.setProperty('--pl-rad', `${radius ?? 0}px`))
-    }
 
+        const { element } = this;
+        element.style.cssText = `
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            perspective: var(${Game.perspectiveCssVar});
+            perspective-origin: 50% 50%;
+        `;
+        this.playerRadius.watch(radius => element.style.setProperty(Game.playerRadiusCssVar, `${radius ?? 0}px`));
+        this.perspective.watch(perspective => element.style.setProperty(Game.perspectiveCssVar, `${perspective}px`));
+    }
+    
     ready = Watched.combine(
         this.world.ready
     ).derive(r => {
         return r.every(v => !!v)
     });
 
-    onCommandsChanged(commands: Set<COMMAND>) {
-        console.log('comamnds changed', commands);
-        // this.world.doCommands(commands);
+    doCommand(command: COMMAND) {
+        // for now, we have nothing directly listening, so lets just pass it down
+        this.world?.doAction(command);
     }
 
     private watchers = [
@@ -63,6 +81,7 @@ export class Game {
         const world = await getJson<WorldData>(path);
         if (world) {
             this.worldData.set(world);
+            document.getElementById('root')?.appendChild(this.element);
             return true;
         }
         return false;
@@ -70,6 +89,7 @@ export class Game {
 
     private loadWorldData(data: WorldData) {
         console.log('loadworlddata', data);
+        const style = this.element.style;
         this.world.ready.watch(r => {
             this.paused.set(!r)
         });
@@ -79,4 +99,5 @@ export class Game {
     private unloadWorld() {
         console.log('unloadWorld');
     }
+
 }

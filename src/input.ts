@@ -3,7 +3,7 @@ import { Watched } from "watched";
 
 export type CommandSet = Set<COMMAND>;
 type MappedKeys = {[key: string]: COMMAND};
-type CommandListener = (commands: CommandSet) => void;
+type CommandListener = (command: COMMAND) => void;
 
 export class Input {
 
@@ -26,6 +26,7 @@ export class Input {
 
     // holds a set of commands that are currently being instructed to fire
     activeCommands = new Watched(new Set<COMMAND>());
+    // triggedCommands = new Watched<COMMAND | undefined>(undefined);
 
     private onCommandListeners: CommandListener[] = [];
 
@@ -61,17 +62,17 @@ export class Input {
                 c = this.customEvents.wheelUp;
             }
             if (c) {
-                console.log('custom command', c);
+                this.emitAction(c);
             }
         })
         return this;
     }
 
-    onCommand(callback: CommandListener) {
+    onAction(callback: CommandListener) {
         this.onCommandListeners.push(callback);
     }
 
-    private emitCommands(commands: CommandSet) {
-        this.onCommandListeners.forEach(cb => cb(commands));
+    private emitAction(command: COMMAND) {
+        this.onCommandListeners.forEach(cb => cb(command));
     }
 }

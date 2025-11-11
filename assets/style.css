@@ -2,7 +2,7 @@
     --bg-color: #ebebeb;
     --fore-color: #1f1f1f;
     --overlay-color: #ffffff;
-    --wireframe-color: #df18c4;
+    --wireframe-color: #000000;
 }
 @media screen and (prefers-color-scheme: dark) {
     :root {
@@ -26,6 +26,7 @@ body, body * {
 }
 
 #root,
+#environment,
 #loading {
     position: fixed;
     top: 0;
@@ -33,6 +34,9 @@ body, body * {
     width: 100%;
     height: 100%;
     overflow: hidden;
+}
+#root {
+    zoom: var(--zoom, 1);
 }
 #loading {
     z-index: 99;
@@ -70,12 +74,12 @@ body, body * {
     font-size: 10px;
     padding: 2px;
 }
-#root {
-    &:before, &:after {
+
+/* this will likely get nuked, don't count on it */
+#game {
+    &:before {
         content: '';
         position: fixed;
-    }
-    &:before {
         top: calc(50% - (var(--pl-rad)));
         left: calc(50% - (var(--pl-rad)));
         width: calc(var(--pl-rad) * 2);
@@ -86,11 +90,6 @@ body, body * {
         outline: 2px dashed magenta;
     }
 }
-#world {
-    position: absolute;
-    transform-style: preserve-3d; 
-    perspective: var(--p);
-}
 
 .object {
     position: absolute;
@@ -100,7 +99,6 @@ body, body * {
     top: var(--y);
     width: var(--w);
     height: var(--l);
-    /* transform: rotate3d(var(--r-x), var(--r-y), var(--r-z)) translateZ(var(--z)); */
     transform: rotateZ(var(--r-z)) translateZ(var(--z));
-    transform-origin: 50% 50% 0
+    transform-origin: 50% 50% 0;
 }

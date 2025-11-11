@@ -5,10 +5,11 @@ export const testWorld: WorldData = {
     id: 'test',
     width: 10000,
     length: 10000,
-    spawn: [5205, 4890, 0], // center of the map, on the ground
+    spawn: [5000, 5000, 0], // center of the map, on the ground
     perspective: 600,
     speed: [5, 15],
     playerRadius: 10,
+    zoom: [-300, 400],
     objects: [
         { // test 1, a basic cube, on the ground
             type: OBJECT_TYPE.CUBOID,

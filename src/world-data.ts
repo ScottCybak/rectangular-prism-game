@@ -11,4 +11,5 @@ export interface WorldData {
     perspective: number;
     speed: MinMax;
     playerRadius: number;
+    zoom: MinMax;
 }

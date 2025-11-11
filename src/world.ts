@@ -1,69 +1,81 @@
+import { Camera } from "camera";
 import { COMMAND } from "command";
 import { Coordinates } from "coordinates";
-import { debugLogger } from "debug-logger";
+import { createDiv } from "create-div";
 import { Game } from "game";
 import { CommandSet } from "input";
 import { MinMax } from "min-max";
-import { ObjectBase, XY } from "object-base";
+import { ObjectBase } from "object-base";
 import { objectClasses, ObjectModel } from "object-classes";
 import { Watched } from "watched";
 import { WorldData } from "world-data";
+import { Zoom } from "zoom";
 
 export class World {
-
-    private domId = 'world';
+    static id = 'world';
 
     private loadedObjects: ObjectBase<any>[] = [];
 
-    private element = document.createElement('div');
+    currentPosition = new Watched<Coordinates | undefined>(undefined);
+    position = this.currentPosition.asReadonly();
 
-    private currentPosition = new Watched<Coordinates>([-1000, -1000, -1000]);
+    private worldData = new Watched<WorldData | undefined>(undefined);
 
-    private scrollPosition = this.currentPosition.derive<XY>(current => {
-        return [current[0] - window.innerWidth / 2, current[1] - window.innerHeight / 2]
-    });
+    camera = new Camera(this);
+    zoom = new Zoom(this);
+    element = createDiv(World.id);
 
+    // these should probably get revisisted to be more responsive?
     private speed: MinMax = [1,2];
     private playerRadius = 0;
 
     constructor(
-        private game: Game,
-    ) {
-        debugLogger.watch(this.currentPosition, 'currentPosition');
-        debugLogger.watch(this.scrollPosition, 'scrollPosition');
-        this.currentPosition.watch(pos => this.onPositionUpdate(pos));
-        this.scrollPosition.watch(pos => this.scrollTo(pos));
+        public game: Game,
+    ) {       
+        this.worldData.watch(d => {
+            if (d?.zoom) this.zoom.constraints = d.zoom;
+        });
     }
 
     ready = new Watched(false);
 
     async loadData(data: WorldData) {
         this.ready.set(false);
+        this.worldData.set(data);
 
-        const { width, length, perspective } = data;
-        const { domId, element } = this;
+        const { width, length } = data;
+        const { element, camera, game, zoom } = this;
         this.speed = [...data.speed];
         this.playerRadius = data.playerRadius;
+        // game.environment.perspective.set(perspective);
         
-        element.id = domId;
         element.style.cssText = `
+            position: absolute;
             width: ${width}px;
             height: ${length}px;
-            position: absolute;
-            top: 0;
-            left: 0;
-            --p: ${perspective}px;
+            top: 50%;
+            left: 50%;
+            transform-style: preserve-3d;
+            transform: translate3d(-50%, -50%, 0);
         `;
 
         if (data.objects?.length) {
             this.createObjects(data.objects, element);
         }
 
-        // ok, connect to the page finally, since the heavy lifting is done
-        this.game.element?.appendChild(element);
+        // create the heirarchy and inject into dom
+        if (game.element) {
+            camera.appendTo(game.element);
+            zoom.appendTo(camera.element);
+            zoom.element.appendChild(element);
+            
+        } else {
+            console.warn('unable to find game element');
+        }
 
         // set our spawn position
-        this.currentPosition.set(data.spawn);
+        this.centerPositionOn(data.spawn);
+        // this.currentPosition.set(data.spawn);
 
         // simulate a delay
         // await new Promise(f => setTimeout(f, 1000));
@@ -76,6 +88,18 @@ export class World {
         this.ready.set(true);
     }
 
+    centerPositionOn([x, y, z]: Coordinates) {
+        const data = this.worldData.get();
+        if (data) {
+            const { width, length } = data;
+            this.currentPosition.set([
+                x - (width / 2),
+                y - (length / 2),
+                z,
+            ])
+        }
+    }
+
     doCommands(commands: CommandSet) {
         const [minSpeed, maxSpeed] = this.speed;
         let x = 0;
@@ -86,26 +110,51 @@ export class World {
         if (commands.has(COMMAND.MOVE_RIGHT)) x = x + 1 * multiplier;
         if (commands.has(COMMAND.MOVE_UP)) y = y - 1 * multiplier;
         if (x || y) {
-            const [l, t] = this.currentPosition.get();
-            const targetPos: Coordinates = [l+x, t+y, 0]; // todo - update if we implement Z axis changes
-            const candidatePos = this.canMove(targetPos);
-            if (candidatePos) {
-                this.currentPosition.set(candidatePos);
+            const pos = this.currentPosition.get();
+            if (pos) {
+                const [l, t] = pos;
+                const targetPos: Coordinates = [
+                    l-x,
+                    t-y,
+                    0
+                ]; // todo - update if we implement Z axis changes
+                const candidatePos = this.canMove(targetPos);
+                if (candidatePos) {
+                    this.currentPosition.set(candidatePos);
+                }
             }
         }
     }
 
-    private canMove(to: Coordinates): false | Coordinates {
-        const intersections = this.loadedObjects.filter(o => o.doesPointIntersect(to, this.playerRadius));
-        if (intersections.length) {
-            // todo; this should be smarter - if moving sw against a flat NS oriented plane, we should continue south
-            return false;
+    doAction(command: COMMAND) {
+        switch (command) {
+            case (COMMAND.ZOOM_IN):
+                this.zoom.in();
+                break;
+            case (COMMAND.ZOOM_OUT):
+                this.zoom.out();
+                break;
         }
-        return to;
     }
 
-    private scrollTo([left, top]: XY, behavior: ScrollBehavior = 'instant') {
-        this.game.element?.scrollTo({left, top, behavior});
+    private canMove(to: Coordinates): false | Coordinates {
+        // we need to the position to our actual game size, as everythin coming in is relative to it's center point
+        const data = this.worldData.get();
+        if (data) {
+            const { width, length } = data;
+            const adjusted: Coordinates = [
+                (width / 2) - to[0],
+                (length / 2) - to[1],
+                to[2],
+            ];
+            const intersections = this.loadedObjects.filter(o => o.doesPointIntersect(adjusted, this.playerRadius));
+            if (intersections.length) {
+                // todo; this should be smarter - if moving sw against a flat NS oriented plane, we should continue south
+                return false;
+            }
+            return to;
+        }
+        return false;
     }
 
 
@@ -121,19 +170,5 @@ export class World {
                 console.warn('no class found', o);
             }
         })
-    }
-
-    private onPositionUpdateTick = false;
-    private onPositionUpdate([left, top]: Coordinates) {
-        if (!this.onPositionUpdateTick) {
-            requestAnimationFrame(() => {
-                const { scrollWidth, scrollHeight } = this.element;
-                const x = left / scrollWidth * 100;
-                const y = top / scrollHeight * 100;
-                this.element.style.perspectiveOrigin = `${x}% ${y}%`;
-                this.onPositionUpdateTick = false;
-            });
-            this.onPositionUpdateTick = true;
-        }
     }
 }
