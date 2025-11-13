@@ -1,6 +1,7 @@
 import { Coordinates } from "coordinates";
 import { createDiv } from "create-div";
 import { debugLogger } from "debug-logger";
+import { Watched } from "watched";
 import { World } from "world";
 
 export class Camera {
@@ -9,6 +10,8 @@ export class Camera {
     static xCssVar = '--c-x';
     static yCssVar = '--c-y';
     static transitionSpeedMs = 150;
+
+    cameraPosition = new Watched({x: 0, y: 0});
 
     element = createDiv(Camera.id);
 
@@ -24,6 +27,11 @@ export class Camera {
 
         world.position.watch(c => this.onPositionChange(c));
         debugLogger.watch(world.position, 'position');
+
+        this.cameraPosition.watch(({x, y}) => {
+            s.setProperty(Camera.xCssVar, `${x ?? 0}px`);
+            s.setProperty(Camera.yCssVar, `${y ?? 0}px`);
+        })
     }
 
     appendTo(element?: HTMLElement) {
@@ -38,8 +46,7 @@ export class Camera {
                 console.warn('ignored');
                 return;
             }
-            s.setProperty(Camera.xCssVar, `${x ?? 0}px`);
-            s.setProperty(Camera.yCssVar, `${y ?? 0}px`);
+            this.cameraPosition.set({ x, y });
         }
     }
 

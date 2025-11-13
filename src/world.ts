@@ -1,6 +1,6 @@
 import { Camera } from "camera";
 import { COMMAND } from "command";
-import { Coordinates } from "coordinates";
+import { Coordinates, isCoordinates } from "coordinates";
 import { createDiv } from "create-div";
 import { Game } from "game";
 import { CommandSet } from "input";
@@ -20,7 +20,6 @@ export class World {
     position = this.currentPosition.asReadonly();
 
     private worldData = new Watched<WorldData | undefined>(undefined);
-
     camera = new Camera(this);
     zoom = new Zoom(this);
     element = createDiv(World.id);
@@ -28,6 +27,15 @@ export class World {
     // these should probably get revisisted to be more responsive?
     private speed: MinMax = [1,2];
     private playerRadius = 0;
+
+    adjustedCurrentPosition = Watched
+        .combine(this.currentPosition, this.worldData)
+        .conditional(([pos, data]) => !!(pos && data))
+        .derive(([pos, data]) => {
+            if (!pos || !data) return undefined;
+            return this.adjustPosition(pos, data);
+        })
+        .conditional(pos => !!pos);
 
     constructor(
         public game: Game,
@@ -73,12 +81,17 @@ export class World {
             console.warn('unable to find game element');
         }
 
-        // set our spawn position
-        this.centerPositionOn(data.spawn);
-        // this.currentPosition.set(data.spawn);
+        // spin up our player
+        this.initialPlayerSpawn(data.spawn);
 
         // simulate a delay
         // await new Promise(f => setTimeout(f, 1000));
+        this.adjustedCurrentPosition.watch(pos => {
+            if (pos) {
+                this.loadedObjects.forEach(o => o.hideByCoordinates(pos))
+            }
+        })
+
 
         Watched.combine(this.game.tick, this.game.commands)
             .conditional(([t, c]) => !!(t && c.size))
@@ -96,18 +109,6 @@ export class World {
     //     const skellyBoy = new Skeleton(d, position).appendTo(this.element);
     //     console.log('skellyBoy', skellyBoy);
     // }
-
-    centerPositionOn([x, y, z]: Coordinates) {
-        const data = this.worldData.get();
-        if (data) {
-            const { width, length } = data;
-            this.currentPosition.set([
-                x - (width / 2),
-                y - (length / 2),
-                z,
-            ])
-        }
-    }
 
     doCommands(commands: CommandSet) {
         const [minSpeed, maxSpeed] = this.speed;
@@ -146,16 +147,38 @@ export class World {
         }
     }
 
+    private initialPlayerSpawn(spawn: Coordinates) {
+        const storageKey = 'world.currentPosition';
+        // set our spawn position
+        let startPosition!: Coordinates;
+        try {
+            const rawPosition = sessionStorage.getItem(storageKey);
+            if (rawPosition) {
+                const pos = JSON.parse(rawPosition);
+                if (isCoordinates(pos)) {
+                    startPosition = pos;
+                    // check to make sure it's in the worlds range...
+                } else {
+                    console.warn('stored value isnt a valid coordinate', pos);
+                }
+            }
+        } catch (err) {
+            console.warn('bad stored position', err);
+        }
+        // this.centerPositionOn(startPosition ?? spawn);
+        this.currentPosition.set(startPosition ?? spawn);
+
+        // setup our position->storage item
+        this.currentPosition.watch(pos => {
+            if (pos) sessionStorage.setItem(storageKey, JSON.stringify(pos));
+        });
+    }
+
     private canMove(to: Coordinates): false | Coordinates {
         // we need to the position to our actual game size, as everythin coming in is relative to it's center point
         const data = this.worldData.get();
         if (data) {
-            const { width, length } = data;
-            const adjusted: Coordinates = [
-                (width / 2) - to[0],
-                (length / 2) - to[1],
-                to[2],
-            ];
+            const adjusted = this.adjustPosition(to, data);
             const intersections = this.loadedObjects.filter(o => o.doesPointIntersect(adjusted, this.playerRadius));
             if (intersections.length) {
                 // todo; this should be smarter - if moving sw against a flat NS oriented plane, we should continue south
@@ -179,5 +202,13 @@ export class World {
                 console.warn('no class found', o);
             }
         })
+    }
+
+    private adjustPosition(pos: Coordinates, { width, length }: WorldData): Coordinates {
+        return [
+            (width / 2) - pos[0],
+            (length / 2) - pos[1],
+            pos[2],
+        ];
     }
 }

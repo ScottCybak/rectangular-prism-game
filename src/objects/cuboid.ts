@@ -65,6 +65,35 @@ export class CuboidObject extends ObjectBase<CuboidObjectModel> {
         return distanceSquared <= radius * radius;
     }
 
+    containsPoint(playerPos: Coordinates): boolean {
+        const { center, inverseRotationMatrix, halfSize } = this.precomputedCuboid
+        const [px, py] = playerPos;
+        const [cx, cy] = center;
+
+        const dx = px - cx;
+        const dy = py - cy;
+
+        const m = inverseRotationMatrix;
+
+        // Rotate point into local space
+        const localX = m[0][0] * dx + m[0][1] * dy;
+        const localY = m[1][0] * dx + m[1][1] * dy;
+
+        const [hx, hy] = halfSize;
+
+        return Math.abs(localX) <= hx && Math.abs(localY) <= hy;
+    }
+
+    hideByCoordinates(point: Coordinates) {
+        const match = this.containsPoint(point);
+        this.toggleVisibility(match);
+        return match;
+    }
+
+    toggleVisibility(visible: boolean): void {
+        this.isHidden.set(visible);
+    }
+
     create() {
         const { element, data } = this;
         const { style } = data;
@@ -117,7 +146,6 @@ export class CuboidObject extends ObjectBase<CuboidObjectModel> {
                 ${style?.bottom ?? ''}
             "></div>
         `;
-        // based on its xyz rotation, create it's point vector and store for later checks
         this.precomputeCuboid(data);
 
         return this;
@@ -130,24 +158,19 @@ export class CuboidObject extends ObjectBase<CuboidObjectModel> {
         const cy = Math.cos(ry), sy = Math.sin(ry);
         const cz = Math.cos(rz), sz = Math.sin(rz);
 
-        // Combined rotation matrix Z * Y * X
         const rot = [
-        [cy * cz, cz * sx * sy - cx * sz, sx * sz + cx * cz * sy],
-        [cy * sz, cx * cz + sx * sy * sz, cx * sy * sz - cz * sx],
-        [-sy,     cy * sx,                cx * cy],
+            [cy * cz, cz * sx * sy - cx * sz, sx * sz + cx * cz * sy],
+            [cy * sz, cx * cz + sx * sy * sz, cx * sy * sz - cz * sx],
+            [-sy,     cy * sx,                cx * cy],
         ];
 
-        // Inverse rotation = transpose
         const inverseRotationMatrix = [
-        [rot[0][0], rot[1][0], rot[2][0]],
-        [rot[0][1], rot[1][1], rot[2][1]],
-        [rot[0][2], rot[1][2], rot[2][2]],
+            [rot[0][0], rot[1][0], rot[2][0]],
+            [rot[0][1], rot[1][1], rot[2][1]],
+            [rot[0][2], rot[1][2], rot[2][2]],
         ];
 
         const halfSize = cuboid.size.map(s => s / 2) as Coordinates;
-
-        // Offset from center-center-bottom to true center
-        const localOffset: Coordinates = [0, 0, halfSize[2]];
 
         const center: Coordinates = [
             cuboid.position[0] + cuboid.size[0] / 2,
@@ -155,7 +178,6 @@ export class CuboidObject extends ObjectBase<CuboidObjectModel> {
             cuboid.position[2] + cuboid.size[2] / 2,
         ];
 
-        // Store the precomputed result on the instance
         this.precomputedCuboid = { center, halfSize, inverseRotationMatrix };
     }
     

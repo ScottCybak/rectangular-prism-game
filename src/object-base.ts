@@ -1,4 +1,5 @@
 import { Coordinates } from "coordinates";
+import { Watched } from "watched";
 
 export interface ObjectBaseModel {
     position: Coordinates;
@@ -28,12 +29,16 @@ export abstract class ObjectBase<T extends ObjectBaseModel> {
 
     abstract create(): this;
     abstract doesPointIntersect(point: Coordinates, radius: number): boolean;
+    abstract containsPoint(point: Coordinates): boolean;
+    abstract hideByCoordinates(point: Coordinates): boolean;
+
+    protected isHidden = new Watched(false);
     
     protected element = document.createElement('div');
 
     limits: Box = { ...defaultBox };
     
-    constructor(protected readonly data: T) {
+    constructor(public readonly data: T) {
         const [x, y, z] = data.position;
         const [width, height, depth] = data.size;
         const [rx, ry, rz] = data.rotate ?? [0, 0, 0];
@@ -59,6 +64,10 @@ export abstract class ObjectBase<T extends ObjectBaseModel> {
             height,
             center: [x + (width / 2), y + (height / 2)]
         }
+
+        this.isHidden.watch(is => {
+            this.element.classList[is ? 'add' : 'remove']('hidden');
+        })
     }
 
     place(appendAsChildTo: HTMLElement) {

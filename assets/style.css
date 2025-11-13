@@ -99,8 +99,23 @@ body, body * {
     top: var(--y);
     width: var(--w);
     height: var(--l);
-    transform: rotateZ(var(--r-z)) translateZ(var(--z));
+    opacity: 1;
+    transform:    
+        rotateX(var(--r-x))
+        rotateY(var(--r-y))
+        rotateZ(var(--r-z))
+        translateZ(var(--z))
+    ;
     transform-origin: 50% 50% 0;
+    
+    & * {
+        transition: all 150ms ease-in-out;
+    }
+
+    &.hidden * {
+        background: none !important;
+        border-color: rgba(0, 0, 0, 0.1) !important;
+    }
 }
 
 .dot-3d {

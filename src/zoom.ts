@@ -27,7 +27,7 @@ export class Zoom {
             transition: transform ${Zoom.transitionSpeedMs}ms ease-out;as
         `;
         this.translateZ.watch(z => this.onZoomChange(z));
-        debugLogger.watch(this.translateZ, 'zoom|translateZ');
+        debugLogger.watch(this.translateZ, 'translateZ');
     }
 
     set constraints([min, max]: MinMax) {
