@@ -20,7 +20,7 @@ export interface CuboidObjectModel extends ObjectBaseModel {
         bottom?: string;
     }
 }
-// https://codepen.io/desandro/pen/bMqZmr (sample/helper)
+
 export class CuboidObject extends ObjectBase<CuboidObjectModel> {
 
     private precomputedCuboid!: PrecomputedCuboid;
@@ -157,6 +157,8 @@ export class CuboidObject extends ObjectBase<CuboidObjectModel> {
         const cx = Math.cos(rx), sx = Math.sin(rx);
         const cy = Math.cos(ry), sy = Math.sin(ry);
         const cz = Math.cos(rz), sz = Math.sin(rz);
+        const position = cuboid.position ?? [0,0,0];
+        const size = cuboid.size ?? [0,0,0];
 
         const rot = [
             [cy * cz, cz * sx * sy - cx * sz, sx * sz + cx * cz * sy],
@@ -170,12 +172,12 @@ export class CuboidObject extends ObjectBase<CuboidObjectModel> {
             [rot[0][2], rot[1][2], rot[2][2]],
         ];
 
-        const halfSize = cuboid.size.map(s => s / 2) as Coordinates;
+        const halfSize = size.map(s => s / 2) as Coordinates;
 
         const center: Coordinates = [
-            cuboid.position[0] + cuboid.size[0] / 2,
-            cuboid.position[1] + cuboid.size[1] / 2,
-            cuboid.position[2] + cuboid.size[2] / 2,
+            position[0] + size[0] / 2,
+            position[1] + size[1] / 2,
+            position[2] + size[2] / 2,
         ];
 
         this.precomputedCuboid = { center, halfSize, inverseRotationMatrix };

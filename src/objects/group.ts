@@ -26,13 +26,9 @@ export class GroupObject extends ObjectBase<GroupObjectModel> {
 
     loadedObjects: ObjectBase<any>[] = [];
 
-    adjustPoint(point: Coordinates): Coordinates {
-        const [x, y, z] = this.data.position;
-        return [
-            point[0] - x,
-            point[1] - y,
-            point[2] - z,
-        ];
+    adjustPoint([a, b, c]: Coordinates): Coordinates {
+        const [x, y, z] = this.data.position ?? [0, 0, 0];
+        return [a - x, b - y, c - z];
     }
 
     containsPoint(point: Coordinates): boolean {
@@ -47,11 +43,7 @@ export class GroupObject extends ObjectBase<GroupObjectModel> {
     }
     
     doesPointIntersect(point: Coordinates, radius: number): boolean {
-        const adjustedPoint: Coordinates = [
-            point[0] - this.data.position[0],
-            point[1] - this.data.position[1],
-            point[2] - this.data.position[2],
-        ];
+        const adjustedPoint = this.adjustPoint(point);
         return this.loadedObjects.some(o => o.doesPointIntersect(adjustedPoint, radius));
     }
 
