@@ -1,7 +1,7 @@
 {
-  "name": "gameengine",
+  "name": "rectangular-prism-game",
   "version": "1.0.0",
-  "description": "Game Engine",
+  "description": "Rectangular Prism Game",
   "license": "ISC",
   "author": "",
   "type": "module",
