@@ -43,7 +43,8 @@ export class Input {
                     this.activeCommands.set(new Set([...activeCommands])) // create a clone
                 }
             }
-        });
+        }, { capture: true });
+        
         document.addEventListener('keyup', ({ code }) => {
             const c = this.keyMap[code];
             if (c) {
@@ -53,18 +54,23 @@ export class Input {
                     this.activeCommands.set(new Set([...activeCommands]));
                 }
             }
-        });
-        document.addEventListener('wheel', ({ deltaY }) => {
+        }, { capture: true });
+
+        document.addEventListener('wheel', e => {
             let c!: COMMAND;
-            if (deltaY > 0) {
+            if (e.ctrlKey) {
+                e.preventDefault();
+            }
+            if (e.deltaY > 0) {
                 c = this.customEvents.wheelDown;
-            } else if (deltaY < 0) {
+            } else if (e.deltaY < 0) {
                 c = this.customEvents.wheelUp;
             }
             if (c) {
                 this.emitAction(c);
             }
-        })
+        }, { capture: true, passive: false });
+
         return this;
     }
 
