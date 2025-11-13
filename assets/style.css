@@ -106,7 +106,7 @@ body, body * {
         rotateZ(var(--r-z))
         translateZ(var(--z))
     ;
-    transform-origin: 50% 50% 0;
+    transform-origin: 50% 50% calc(var(--z) + var(--h) / 2);
     
     & * {
         transition: all 150ms ease-in-out;

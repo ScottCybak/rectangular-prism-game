@@ -2,8 +2,8 @@ import { Coordinates } from "coordinates";
 import { Watched } from "watched";
 
 export interface ObjectBaseModel {
-    position: Coordinates;
-    size: Coordinates;
+    position?: Coordinates;
+    size?: Coordinates;
     rotate?: Coordinates;
 }
 
@@ -39,8 +39,8 @@ export abstract class ObjectBase<T extends ObjectBaseModel> {
     limits: Box = { ...defaultBox };
     
     constructor(public readonly data: T) {
-        const [x, y, z] = data.position;
-        const [width, height, depth] = data.size;
+        const [x, y, z] = data.position ?? [0, 0, 0];
+        const [width, height, depth] = data.size ?? [0, 0, 0];
         const [rx, ry, rz] = data.rotate ?? [0, 0, 0];
         const { element } = this;
         element.classList.add('object', `object-${(data as any).type}`);

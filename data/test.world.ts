@@ -241,6 +241,13 @@ export const testWorld: WorldData = {
                     size: [50, 50, 50],
                     style: helpers.treeCanopy,
                 },
+                {
+                    type: OBJECT_TYPE.CUBOID,
+                    position: [0, 0, 50],
+                    size: [50, 50, 50],
+                    rotate: [130, 45, 0],
+                    style: helpers.treeCanopy,
+                },
             ]
         }
     ],
