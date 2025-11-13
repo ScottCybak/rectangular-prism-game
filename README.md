@@ -10,6 +10,8 @@ I'm not 100% sure where this is going yet, but it's turning into something.
 
 `Mouse wheel up/down` to zoom in/out
 
+`Escape` nothing yet
+
 ## Have to have's
 - experiment with loading another world (or, just unloading) and see what we need to do for destructuring, it'll probably tease out a lot of orphaned watched/listeners
 - collision based movement modifier -> eg, running into a object on an angle would let you continue in the non constricted direction?
