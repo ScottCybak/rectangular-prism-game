@@ -77,17 +77,29 @@ body, body * {
 
 /* this will likely get nuked, don't count on it */
 #game {
-    &:before {
+    &::after, &::before {
         content: '';
-        position: fixed;
-        top: calc(50% - (var(--pl-rad)));
-        left: calc(50% - (var(--pl-rad)));
-        width: calc(var(--pl-rad) * 2);
-        height: calc(var(--pl-rad) * 2);
-        border: 2px solid magenta;
-        border-radius: 100%;
-        box-sizing: border-box;
-        outline: 2px dashed magenta;
+        border-color: magenta;
+        border-width: 0;
+        border-style: solid;
+        position: absolute;
+        z-index: 9999;
+        --crosshair-thick: 1px;
+        --crosshair-length: 25px;
+    }
+    &::before {
+        width: var(--crosshair-size);
+        height: var(--crosshair-length);
+        top: calc(50% - var(--crosshair-length) / 2);
+        left: calc(50% - var(--crosshair-thick) / 2);
+        border-left-width: var(--crosshair-thick);
+    }
+    &::after {
+        width: var(--crosshair-length);
+        height: var(--crosshair-size);
+        border-top-width: var(--crosshair-thick);
+        left: calc(50% - var(--crosshair-length) / 2);
+        top: calc(50% - var(--crosshair-thick) / 2);
     }
 }
 
