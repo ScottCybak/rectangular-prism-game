@@ -2,6 +2,8 @@ import { ReadonlyWatched, Watched } from "watched";
 
 class DebugLogger {
 
+    readonly cssClass = 'debug';
+
     private element = document.createElement('div');
     
     constructor() {

@@ -22,9 +22,11 @@ const helpers = {
     treeCanopy: makeColorHelper('rgba(45, 143, 0, 0.39)')
 }
 
+const cHeight = 96;
+
 export const testWorld: WorldData = {
     id: 'test',
-    width: 10000,
+    width: 12000,
     length: 10000,
     spawn: [0, 0, 0], // center of the map, on the ground
     perspective: 600,
@@ -32,6 +34,32 @@ export const testWorld: WorldData = {
     playerRadius: 10,
     zoom: [-300, 400],
     objects: [
+        {
+            type: OBJECT_TYPE.GROUP,
+            position: [4000,4000, 0],
+            objects: [
+                { // patio
+                    type: OBJECT_TYPE.GROUP,
+                    position: [0, 47.5, 0],
+                    objects: [
+                        { // N wall
+                            type: OBJECT_TYPE.CUBOID,
+                            size: [98, 4, cHeight],
+                        },
+                        { // W wall
+                            type: OBJECT_TYPE.CUBOID,
+                            position: [0, 4, 0],
+                            size: [4, 202.5 - 8, cHeight],
+                        },
+                        { // S wall
+                            type: OBJECT_TYPE.CUBOID,
+                            position: [0, 202.5 - 4, 0],
+                            size: [98, 4, cHeight],
+                        }
+                    ]
+                },
+            ]
+        },
         {  // fancy skyscraper b
             type: OBJECT_TYPE.GROUP,
             size: [0, 0, 0],

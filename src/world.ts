@@ -2,24 +2,25 @@ import { Camera } from "camera";
 import { COMMAND } from "command";
 import { Coordinates, isCoordinates } from "coordinates";
 import { createDiv } from "create-div";
+import { debugLogger } from "debug-logger";
 import { Game } from "game";
 import { CommandSet } from "input";
 import { MinMax } from "min-max";
 import { ObjectBase } from "object-base";
 import { objectClasses, ObjectModel } from "object-classes";
-import { Watched } from "watched";
+import { TileController } from "tile-controller";
+import { ReadonlyWatched, Watched } from "watched";
 import { WorldData } from "world-data";
 import { Zoom } from "zoom";
 
 export class World {
     static id = 'world';
 
-    private loadedObjects: ObjectBase<any>[] = [];
-
     currentPosition = new Watched<Coordinates | undefined>(undefined);
     position = this.currentPosition.asReadonly();
 
     private worldData = new Watched<WorldData | undefined>(undefined);
+    worldSize: ReadonlyWatched<[number, number]> = this.worldData.derive(d => d ? [d.width, d.length] : [0, 0]);
     camera = new Camera(this);
     zoom = new Zoom(this);
     element = createDiv(World.id);
@@ -37,12 +38,17 @@ export class World {
         })
         .conditional(pos => !!pos);
 
+    tileController!: TileController;
+
     constructor(
         public game: Game,
-    ) {       
+    ) {
+        console.log('world constructor', game);
         this.worldData.watch(d => {
             if (d?.zoom) this.zoom.constraints = d.zoom;
         });
+        debugLogger.watch(this.adjustedCurrentPosition, 'pxPosition');
+        this.tileController = new TileController(this);
     }
 
     ready = new Watched(false);
@@ -71,6 +77,7 @@ export class World {
             this.createObjects(data.objects, element);
         }
 
+
         // create the heirarchy and inject into dom
         if (game.element) {
             camera.appendTo(game.element);
@@ -81,6 +88,9 @@ export class World {
             console.warn('unable to find game element');
         }
 
+        // initialize our tiling agent
+        this.tileController.init();
+
         // spin up our player
         this.initialPlayerSpawn(data.spawn);
 
@@ -88,10 +98,9 @@ export class World {
         // await new Promise(f => setTimeout(f, 1000));
         this.adjustedCurrentPosition.watch(pos => {
             if (pos) {
-                this.loadedObjects.forEach(o => o.hideByCoordinates(pos))
+                this.tileController.loadedObjects.forEach(o => o.hideByCoordinates(pos))
             }
         })
-
 
         Watched.combine(this.game.tick, this.game.commands)
             .conditional(([t, c]) => !!(t && c.size))
@@ -179,7 +188,7 @@ export class World {
         const data = this.worldData.get();
         if (data) {
             const adjusted = this.adjustPosition(to, data);
-            const intersections = this.loadedObjects.filter(o => o.doesPointIntersect(adjusted, this.playerRadius));
+            const intersections = this.tileController.loadedObjects.filter(o => o.doesPointIntersect(adjusted, this.playerRadius));
             if (intersections.length) {
                 // todo; this should be smarter - if moving sw against a flat NS oriented plane, we should continue south
                 return false;
@@ -191,12 +200,11 @@ export class World {
 
 
     private createObjects(objects: ObjectModel[], container: HTMLElement) {
-        const { loadedObjects } = this;
+        // const { loadedObjects } = this;
         objects.forEach(o => {
             const Klass = objectClasses[o.type];
             if (Klass) {
-                const instance = new Klass(o).create().place(container);
-                loadedObjects.push(instance);
+                new Klass(o).create().addToTile(this.tileController);
 
             } else {
                 console.warn('no class found', o);

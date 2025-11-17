@@ -1,5 +1,6 @@
 import { Camera } from "camera";
 import { createDiv } from "create-div";
+import { debounce } from "debounce";
 import { debugLogger } from "debug-logger";
 import { MinMax } from "min-max";
 import { Watched } from "watched";
@@ -13,6 +14,7 @@ export class Zoom {
 
     private min = 0;
     private max = 0;
+    private zoomTimeout!: number;
 
     translateZ = new Watched(0);
 
@@ -26,7 +28,9 @@ export class Zoom {
             transform: translateZ(var(--zoom, 0));
             transition: transform ${Zoom.transitionSpeedMs}ms ease-out;as
         `;
-        this.translateZ.watch(z => this.onZoomChange(z));
+        // ddEventListener('resize', debounce(() => this.resolution.set([innerWidth, innerHeight]), 100));
+        this.translateZ.watch(debounce(this.onZoomChange.bind(this), 10));
+        // this.translateZ.watch(z => this.onZoomChange(z));
         debugLogger.watch(this.translateZ, 'translateZ');
     }
 
@@ -58,8 +62,11 @@ export class Zoom {
         }
     }
 
+    // this is crude, but it may work...
     private onZoomChange(zoom: number) {
-        this.world?.game?.element?.style.setProperty(Zoom.cssVar, `${zoom ?? 0}px`);
+        requestAnimationFrame(() => {
+            this.world?.game?.element?.style.setProperty(Zoom.cssVar, `${zoom ?? 0}px`);
+        });
     }
 
     appendTo(element?: HTMLElement) {

@@ -94,6 +94,10 @@ export class CuboidObject extends ObjectBase<CuboidObjectModel> {
         this.isHidden.set(visible);
     }
 
+    recalculateDimensions(): void {
+        // do nothing, this should be fine since it's set
+    }
+
     create() {
         const { element, data } = this;
         const { style } = data;

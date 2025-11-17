@@ -8,27 +8,28 @@ export interface GroupObjectModel extends ObjectBaseModel {
     objects: ObjectModel[];
 }
 
-const getAllChildren = (group: GroupObject, point: Coordinates): ObjectBase<any>[] => {
-    // const nonGroups = group.data.objects.filter(o => !(o instanceof GroupObject));
-    const result: ObjectBase<any>[] = [];
-    group.loadedObjects.forEach(obj => {
-        if (obj instanceof GroupObject) {
-            const adjustedPoint = group.adjustPoint(point);
-            result.push(...getAllChildren(obj, adjustedPoint))
-        } else if (obj.containsPoint(point)) {
-            result.push(obj);
-        }
-    });
-    return result;
-}
-
 export class GroupObject extends ObjectBase<GroupObjectModel> {
 
-    loadedObjects: ObjectBase<any>[] = [];
+    loadedObjects: ObjectBase<ObjectModel>[] = [];
 
     adjustPoint([a, b, c]: Coordinates): Coordinates {
         const [x, y, z] = this.data.position ?? [0, 0, 0];
         return [a - x, b - y, c - z];
+    }
+
+    recalculateDimensions(): void {
+        const x = [0];
+        const y = [0];
+        this.loadedObjects
+            .forEach(({ width, height, data }) => {
+                const position = data.position ?? [0, 0, 0];
+                x.push(width + position[0]);
+                y.push(height + position[1]);
+            });
+        const w = this.width = Math.max(...x);
+        const h = this.height = Math.max(...y);
+        this.element.style.setProperty('--w', `${w}px`);
+        this.element.style.setProperty('--l', `${h}px`);
     }
 
     containsPoint(point: Coordinates): boolean {
@@ -49,6 +50,7 @@ export class GroupObject extends ObjectBase<GroupObjectModel> {
 
     create(): this {
         this.createObjects(this.data.objects, this.element);
+        this.recalculateDimensions();
         return this;
     }
 

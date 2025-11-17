@@ -26,7 +26,7 @@ export class Game {
     
     private playerRadius = this.worldData.derive(d => d?.playerRadius ?? 1);
 
-    private perspective = this.worldData.derive(d => d?.perspective ?? 400);
+    perspective = this.worldData.derive(d => d?.perspective ?? 400);
     
     world = new World(this);
 
@@ -97,7 +97,7 @@ export class Game {
     }
     
     private unloadWorld() {
-        console.log('unloadWorld');
+        // todo
     }
 
 }

@@ -129,9 +129,36 @@ body, body * {
         border-color: rgba(0, 0, 0, 0.1) !important;
     }
 }
+#world > .object.offscreen {
+    display: none !important;
+}
 
 .dot-3d {
     position: absolute;
     border-radius: 50%;
     background: magenta;
+}
+
+#tile {
+    position: absolute;
+    top: 0;
+    left: 0;
+    .tile {
+        position: absolute;
+        width: 512px;
+        height: 512px;
+        border: 1px solid magenta;
+        border-width: 0 0 1px 1px;
+        &::after {
+            z-index: 0;
+            display: flex;
+            font-size: 4rem;
+            color: rgba(255, 255, 255, 0.164);
+            content: attr(id);
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+        }
+    }
 }
