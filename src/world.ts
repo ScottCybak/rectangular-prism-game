@@ -123,11 +123,14 @@ export class World {
             }
         })
 
+        // i don't think this is doing what it needs to..
+        // if a command is updated mid tick, it will run
+        // in between ticks?
         Watched.combine(this.game.tick, this.game.commands)
             .conditional(([t, c]) => !!(t && c.size))
-            .derive(([_, c]) => this.doCommands(c));
-
-        // this.createPlayer([data.spawn[0] - 100, data.spawn[1] - 100, 0]);
+            .derive(([_, c]) => {
+                this.doCommands(c)
+            });
 
         // and, notify that we're good to go
         this.ready.set(true);
@@ -152,6 +155,7 @@ export class World {
                     t-y,
                     z,
                 ]; // todo - update if we implement Z axis changes
+                console.log('check', targetPos);
                 const candidatePos = this.canMove(targetPos);
                 if (candidatePos) {
                     this.currentPosition.set(candidatePos);

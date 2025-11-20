@@ -42,7 +42,7 @@ export const testWorld: WorldData = {
     width: 12000,
     length: 10000,
     spawn: [1340, 340, 0], // center of the map, on the ground
-    perspective: 600,
+    perspective: 1000,
     speed: [4, 10],
     playerRadius: 10,
     avatar: {

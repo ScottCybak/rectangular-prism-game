@@ -1,6 +1,15 @@
 # Rectangular Prism Game
 
-I'm not 100% sure where this is going yet, but it's turning into something.
+Alright, we've pushed this as far as i think.  The complexity of the number of shapes on screen is scaling worse then i thought.  We did learn some stuff, so not all is lost.
+
+1. Trying to manage y/z is a pain in the ass
+2. Our Watched needs some work - and is it worth it if we just bring in rxjs or something similar?
+3. Intersectional calculations are killing us, even when we attempt to reduce the number of candidates to check.
+4. This DOES have some use cases, but keyboard and high fps tick based input delay is expensive, as we suspected.
+
+## So, what does this mean?
+
+Deprecation!
 
 ## Controls
 
