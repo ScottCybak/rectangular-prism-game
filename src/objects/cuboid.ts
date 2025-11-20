@@ -1,7 +1,9 @@
 import { Coordinates } from "coordinates";
 import { degreeToRadian } from "degree-to-radian";
-import { ObjectBase, ObjectBaseModel } from "object-base";
-import { OBJECT_TYPE } from "object-type";
+import { ObjectBase, ObjectBaseModel } from "objects/object-base";
+import { OBJECT_TYPE } from "objects/object-type";
+import { segmentAABBDistanceSquared } from "segment-aabb-distance-squared";
+import { worldToLocal } from "world-to-local";
 
 interface PrecomputedCuboid {
     center: Coordinates;
@@ -25,62 +27,52 @@ export class CuboidObject extends ObjectBase<CuboidObjectModel> {
 
     private precomputedCuboid!: PrecomputedCuboid;
 
-    doesPointIntersect(point: Coordinates, radius: number): boolean {
+    canMoveOnto(to: Coordinates, radius: number, height: number): false | Coordinates {
+        const { verticalStep } = this.world;
+        const intersecting = this.doesPointIntersect(to, radius, height);
+        if (intersecting) {
+            const { depth, base } = this;
+            const [x, y, z] = to;
+            const height = depth + base;
+            if (height - z <= verticalStep ) {
+                return [to[0], to[1], height];
+            }
+        }
+        return false;
+    }
+
+    doesPointIntersect(position: Coordinates, radius: number, height: number): boolean {
+        const feet: Coordinates = position;
+        const head: Coordinates = [position[0], position[1], position[2] + height]; // extend along Z (height)
+
         const cuboid = this.precomputedCuboid;
+        const { center, halfSize, inverseRotationMatrix: R } = cuboid;
 
-        // Translate player center into cuboid-local coordinates
-        const local: Coordinates = [
-            point[0] - cuboid.center[0],
-            point[1] - cuboid.center[1],
-            point[2] - cuboid.center[2],
-        ];
+        // Filter out cuboids entirely below the player's feet (height = Z axis)
+        const cuboidTop = center[2] + halfSize[2];
+        const feetZ = position[2];
+        if (cuboidTop < feetZ + 0.01) return false; // small margin
 
-        // Apply inverse rotation to align with cuboid axes
-        const localRotated: Coordinates = [
-            local[0] * cuboid.inverseRotationMatrix[0][0] +
-            local[1] * cuboid.inverseRotationMatrix[0][1] +
-            local[2] * cuboid.inverseRotationMatrix[0][2],
-            local[0] * cuboid.inverseRotationMatrix[1][0] +
-            local[1] * cuboid.inverseRotationMatrix[1][1] +
-            local[2] * cuboid.inverseRotationMatrix[1][2],
-            local[0] * cuboid.inverseRotationMatrix[2][0] +
-            local[1] * cuboid.inverseRotationMatrix[2][1] +
-            local[2] * cuboid.inverseRotationMatrix[2][2],
-        ];
+        // Step 1 — transform capsule endpoints into cuboid LOCAL space
+        const p0 = worldToLocal(feet, center, R);
+        const p1 = worldToLocal(head, center, R);
 
-        // Clamp player center to cuboid bounds to find closest point on cuboid
-        const closest: Coordinates = [
-            Math.max(-cuboid.halfSize[0], Math.min(localRotated[0], cuboid.halfSize[0])),
-            Math.max(-cuboid.halfSize[1], Math.min(localRotated[1], cuboid.halfSize[1])),
-            Math.max(-cuboid.halfSize[2], Math.min(localRotated[2], cuboid.halfSize[2])),
-        ];
+        // Step 2 — compute squared distance between segment (p0,p1) and AABB centered at origin
+        const distSq = segmentAABBDistanceSquared(p0, p1, halfSize);
 
-        // Compute squared distance from sphere center to closest point
-        const dx = localRotated[0] - closest[0];
-        const dy = localRotated[1] - closest[1];
-        const dz = localRotated[2] - closest[2];
-        const distanceSquared = dx * dx + dy * dy + dz * dz;
-
-        // Intersect if distance <= radius
-        return distanceSquared <= radius * radius;
+        return distSq <= radius * radius;
     }
 
     containsPoint(playerPos: Coordinates): boolean {
         const { center, inverseRotationMatrix, halfSize } = this.precomputedCuboid
         const [px, py] = playerPos;
         const [cx, cy] = center;
-
         const dx = px - cx;
         const dy = py - cy;
-
         const m = inverseRotationMatrix;
-
-        // Rotate point into local space
         const localX = m[0][0] * dx + m[0][1] * dy;
         const localY = m[1][0] * dx + m[1][1] * dy;
-
         const [hx, hy] = halfSize;
-
         return Math.abs(localX) <= hx && Math.abs(localY) <= hy;
     }
 
@@ -94,14 +86,10 @@ export class CuboidObject extends ObjectBase<CuboidObjectModel> {
         this.isHidden.set(visible);
     }
 
-    recalculateDimensions(): void {
-        // do nothing, this should be fine since it's set
-    }
-
     create() {
         const { element, data } = this;
         const { style } = data;
-        const common = `position: absolute; transform-origin: left top; border: 1px solid var(--wireframe-color);`;
+        const common = `position: absolute; transform-origin: left top;`;
         element.innerHTML = `
             <!-- front -->
             <div style="${common}
@@ -186,5 +174,4 @@ export class CuboidObject extends ObjectBase<CuboidObjectModel> {
 
         this.precomputedCuboid = { center, halfSize, inverseRotationMatrix };
     }
-    
 }

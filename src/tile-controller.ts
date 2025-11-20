@@ -3,7 +3,8 @@
 import { createDiv } from "create-div";
 import { debounce } from "debounce";
 import { debugLogger } from "debug-logger";
-import { ObjectBase, ObjectBaseModel } from "object-base";
+import { ObjectBase, ObjectBaseModel } from "objects/object-base";
+import { FloorObject } from "objects/floor";
 import { ReadonlyWatched, Watched } from "watched";
 import { World } from "world";
 
@@ -23,9 +24,12 @@ export class TileController {
         row: number,
     }>(); // holds tileId -> objects[] - an object can exist in multiple
 
-    constructor(
-        private world: World,
-    ) {
+    constructor(private world: World) { }
+
+    init(tileSize: number) {
+        const { world } = this;
+        this.tileSize = tileSize;
+
         world.adjustedCurrentPosition.watch(pos => {
             if (!pos) return [0,0];
             const size = this.tileSize;
@@ -52,10 +56,6 @@ export class TileController {
 
         debugLogger.watch(this.adjustedRange, 'tile.range');
 
-        this.world.worldSize.watch(s => this.onWorldSizeChange(s));
-    }
-
-    init() {
         addEventListener('resize', debounce(() => this.resolution.set([innerWidth, innerHeight]), 100));
         
         this.tileElement.classList.add(debugLogger.cssClass);
@@ -71,12 +71,13 @@ export class TileController {
             notInRange.forEach(o => o.offscreen?.set(true));
             inRange.forEach(o => o.offscreen?.set(false));
         })
+
+        this.world.worldSize.watch(s => this.onWorldSizeChange(s));
     }
 
     get loadedObjects(): ObjectBase<any>[] {
         const [col, row] = this.activeTile.get();
         const id = this.makeTileId(col, row);
-        // console.log('loaded', id, this.buckets.get(id));
         return this.buckets.get(id)?.objects ?? [];
     }
 
@@ -105,9 +106,6 @@ export class TileController {
         const maxY = row + halfY;
         const inRange = new Set<ObjectBase<ObjectBaseModel>>();
         const notInRange = new Set<ObjectBase<ObjectBaseModel>>();
-        // if (row && col) {
-        //     console.log({col, x, halfX, minX, maxX})
-        // }
         this.buckets
             .entries()
             .forEach(([id, {objects, row, col }]) => {
@@ -136,23 +134,23 @@ export class TileController {
                 row,
             });
         } else {
-            b.get(index)?.objects.push(obj);
+            b.get(index)?.objects[obj instanceof FloorObject ? 'push' : 'unshift'](obj);
         }
     }
 
     onWorldSizeChange([width, height]: XY) {
-        const { tileElement, tileSize } = this;
-        tileElement.childNodes.forEach(n => tileElement.removeChild(n));
-        const columns = Math.ceil(width / tileSize);
-        const rows = Math.ceil(height / tileSize);
-        for (let i = 0; i < rows; i ++) {
-            for (let j = 0; j < columns; j ++) {
-                const d = createDiv(`tile-${j}-${i}`);
-                d.classList.add('tile');
-                d.style.cssText = `left: ${j * tileSize}px; top: ${i * tileSize}px`;
-                tileElement.appendChild(d);
-            }
-        }
+        // const { tileElement, tileSize } = this;
+        // tileElement.childNodes.forEach(n => tileElement.removeChild(n));
+        // const columns = Math.ceil(width / tileSize);
+        // const rows = Math.ceil(height / tileSize);
+        // for (let i = 0; i < rows; i ++) {
+        //     for (let j = 0; j < columns; j ++) {
+        //         const d = createDiv(`tile-${j}-${i}`);
+        //         d.classList.add('tile');
+        //         d.style.cssText = `left: ${j * tileSize}px; top: ${i * tileSize}px; width: ${tileSize}px; height: ${tileSize}px;`;
+        //         tileElement.appendChild(d);
+        //     }
+        // }
     }
 
     private makeTileId(col: number, row: number) {

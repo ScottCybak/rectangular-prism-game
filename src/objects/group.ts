@@ -1,7 +1,7 @@
 import { Coordinates } from "coordinates";
-import { ObjectBase, ObjectBaseModel } from "object-base";
-import { objectClasses, ObjectModel } from "object-classes";
-import { OBJECT_TYPE } from "object-type";
+import { ObjectBase, ObjectBaseModel } from "objects/object-base";
+import { objectClasses, ObjectModel } from "objects/object-classes";
+import { OBJECT_TYPE } from "objects/object-type";
 
 export interface GroupObjectModel extends ObjectBaseModel {
     type: OBJECT_TYPE.GROUP;
@@ -15,6 +15,18 @@ export class GroupObject extends ObjectBase<GroupObjectModel> {
     adjustPoint([a, b, c]: Coordinates): Coordinates {
         const [x, y, z] = this.data.position ?? [0, 0, 0];
         return [a - x, b - y, c - z];
+    }
+
+    canMoveOnto(to: Coordinates, radius: number, height: number): false | Coordinates {
+        const adjustedTo = this.adjustPoint(to);
+
+        const match = this.loadedObjects
+            .map(o => o.canMoveOnto(adjustedTo, radius, height))
+            .find(o => !!o);
+        if (match) {
+            return match;
+        }
+        return false;
     }
 
     recalculateDimensions(): void {
@@ -31,10 +43,6 @@ export class GroupObject extends ObjectBase<GroupObjectModel> {
         this.element.style.setProperty('--w', `${w}px`);
         this.element.style.setProperty('--l', `${h}px`);
     }
-
-    containsPoint(point: Coordinates): boolean {
-        return false;
-    }
     
     hideByCoordinates(point: Coordinates) {
         const adjustedPoint = this.adjustPoint(point);
@@ -43,9 +51,9 @@ export class GroupObject extends ObjectBase<GroupObjectModel> {
         return false;
     }
     
-    doesPointIntersect(point: Coordinates, radius: number): boolean {
+    doesPointIntersect(point: Coordinates, radius: number, height: number): boolean {
         const adjustedPoint = this.adjustPoint(point);
-        return this.loadedObjects.some(o => o.doesPointIntersect(adjustedPoint, radius));
+        return this.loadedObjects.some(o => o.doesPointIntersect(adjustedPoint, radius, height));
     }
 
     create(): this {
@@ -61,8 +69,7 @@ export class GroupObject extends ObjectBase<GroupObjectModel> {
         objects.forEach(o => {
             const Klass = objectClasses[o.type];
             if (Klass) {
-                const instance = new Klass(o).create().place(container);
-                loadedObjects.push(instance);
+                loadedObjects.push(new Klass(o, this.world).create().place(container));
             } else {
                 console.warn('no class found', o);
             }

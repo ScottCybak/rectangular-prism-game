@@ -122,6 +122,7 @@ body, body * {
     
     & * {
         transition: all 150ms ease-in-out;
+        border: 1px solid var(--wireframe-color);
     }
 
     &.hidden * {
@@ -145,14 +146,12 @@ body, body * {
     left: 0;
     .tile {
         position: absolute;
-        width: 512px;
-        height: 512px;
         border: 1px solid magenta;
         border-width: 0 0 1px 1px;
         &::after {
             z-index: 0;
             display: flex;
-            font-size: 4rem;
+            font-size: 2rem;
             color: rgba(255, 255, 255, 0.164);
             content: attr(id);
             align-items: center;
@@ -161,4 +160,14 @@ body, body * {
             justify-content: center;
         }
     }
+}
+
+.creature {
+    position: absolute;
+    transform-style: preserve-3d;
+    z-index: 2;
+    top: var(--y);
+    left: var(--x);
+    transition: all 150ms linear;
+    transform: translateZ(var(--z));
 }

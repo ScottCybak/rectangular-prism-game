@@ -1,5 +1,7 @@
-import { OBJECT_TYPE } from "object-type";
+import { OBJECT_TYPE } from "objects/object-type";
+import { CuboidObjectModel } from "objects/cuboid";
 import { WorldData } from "world-data";
+import { CREATURE_TYPE } from "creatures/creature-type";
 
 const makeColorHelper = (color: string) => {
     const colorCss = `background: ${color};`;
@@ -19,42 +21,123 @@ const helpers = {
     glass: makeColorHelper('rgba(255, 255, 255, 0.31)'),
     brown: makeColorHelper('brown'),
     green: makeColorHelper('green'),
-    treeCanopy: makeColorHelper('rgba(45, 143, 0, 0.39)')
+    treeCanopy: makeColorHelper('rgba(45, 143, 0, 0.39)'),
+    plaster: makeColorHelper('#e0ccba'),
+    concrete: makeColorHelper('#D2D1CD'),
 }
 
 const cHeight = 96;
+const doorHeight = 80;
+const doorHeaderHeight = cHeight - doorHeight;
+const makeWall = (x: number, y: number, z = cHeight, style = helpers.plaster): CuboidObjectModel => {
+    return {
+        type: OBJECT_TYPE.CUBOID,
+        size: [x, y, z],
+        style,
+    }
+}
 
 export const testWorld: WorldData = {
     id: 'test',
     width: 12000,
     length: 10000,
-    spawn: [0, 0, 0], // center of the map, on the ground
+    spawn: [1340, 340, 0], // center of the map, on the ground
     perspective: 600,
-    speed: [5, 15],
+    speed: [4, 10],
     playerRadius: 10,
-    zoom: [-300, 400],
+    avatar: {
+        type: CREATURE_TYPE.HUMANOID,
+        size: [22, 13, 76],
+        position: [0, 0, 0],
+    },
+    zoom: [-400, 400],
+    tileSize: 256,
+    verticalStep: 8,
     objects: [
-        {
+        { // base
+            type: OBJECT_TYPE.FLOOR,
+            size: [12000, 10000, 0],
+            style: 'background: #348C31 ;'
+        },
+        { // house
             type: OBJECT_TYPE.GROUP,
-            position: [4000,4000, 0],
+            label: 'house',
+            position: [4500,4500, 0],
             objects: [
                 { // patio
                     type: OBJECT_TYPE.GROUP,
+                    label: 'patio',
                     position: [0, 47.5, 0],
                     objects: [
+                        { // foundation
+                            type: OBJECT_TYPE.CUBOID,
+                            size: [98, 202.5, 15.5],
+                            style: helpers.concrete,
+                            label: 'patio-foundation',
+                        },
+                        { // porch
+                            type: OBJECT_TYPE.CUBOID,
+                            size: [59.5, 43, 15.5],
+                            position: [98-59.5, 202.5, 0],
+                            style: helpers.concrete,
+                            label: 'porch-foundation',
+                        },
+                        {
+                            type: OBJECT_TYPE.CUBOID,
+                            size: [59.5, 10, 7.75],
+                            position: [98-59.5, 202.5+43, 0],
+                            style: helpers.concrete,
+                            label: 'porch-stair',
+                        },
                         { // N wall
-                            type: OBJECT_TYPE.CUBOID,
-                            size: [98, 4, cHeight],
+                            type: OBJECT_TYPE.GROUP,
+                            position: [0, 0, 16],
+                            objects: [
+                                {
+                                    type: OBJECT_TYPE.CUBOID,
+                                    size: [98, 4, 32],
+                                    style: helpers.plaster,
+                                },
+                                {
+                                    type: OBJECT_TYPE.CUBOID,
+                                    size: [98, 4, doorHeaderHeight],
+                                    position: [0, 0, doorHeight],
+                                    style: helpers.plaster,
+                                },
+                                ...[0, 1, 2].map(idx => {
+                                    return {
+                                        ...makeWall(6, 4, cHeight - 32 - doorHeaderHeight),
+                                        position: [(98 - 6) / 2 * idx, 0, 32],
+                                    } as CuboidObjectModel
+                                })
+                            ],
                         },
-                        { // W wall
-                            type: OBJECT_TYPE.CUBOID,
-                            position: [0, 4, 0],
-                            size: [4, 202.5 - 8, cHeight],
+                        { // w wall
+                            type: OBJECT_TYPE.GROUP,
+                            position: [0, 4, 16],
+                            objects: [
+                                { ...makeWall(4, 202.5-8, doorHeaderHeight), position: [0, 0, doorHeight], label: 'patio-w-header'},
+                                { ...makeWall(4, 202.5-8, 32), position: [0, 0, 0], label: 'patio-w-base' },
+                                ...[0, 1, 2, 3, 4].map(idx => {
+                                    return {
+                                        ...makeWall(4, 6, cHeight - 32 - doorHeaderHeight),
+                                        position: [0, (202.5 - 8 - 6) / 4 * idx, 32],
+                                        label: `patio-w-nub-${idx}`,
+                                    } as CuboidObjectModel;
+                                }),
+                            ]
                         },
-                        { // S wall
-                            type: OBJECT_TYPE.CUBOID,
-                            position: [0, 202.5 - 4, 0],
-                            size: [98, 4, cHeight],
+                        { // s wall
+                            type: OBJECT_TYPE.GROUP,
+                            position: [0, 202.5 - 4, 16],
+                            objects: [
+                                { ...makeWall(6, 4), position: [98-6, 0, 0]}, // right of door
+                                { ...makeWall(32, 4, doorHeaderHeight), position: [98-6-32, 0, doorHeight]},
+                                { ...makeWall(6, 4), position: [98-6-32-6, 0, 0]}, // left of door
+                                { ...makeWall(6, 4)},
+                                { ...makeWall(98 - 6 - 6 - 32 - 6, 4, 32), position: [6, 0, 0]},
+                                { ...makeWall(98 - 6 - 6 - 32 - 6, 4, doorHeaderHeight), position: [6, 0, doorHeight]}
+                            ]
                         }
                     ]
                 },
@@ -103,8 +186,8 @@ export const testWorld: WorldData = {
                 },
                 {  // 1st floor (draw order is important here, for clipping.. maybe?)
                     type: OBJECT_TYPE.CUBOID,
-                    size: [200, 150, 100],
-                    position: [15, 15, 50],
+                    size: [200, 150, 73],
+                    position: [15, 15, 77],
                     style: {
                         ...helpers.grey
                     },
@@ -260,18 +343,18 @@ export const testWorld: WorldData = {
                 {  // trunk
                     type: OBJECT_TYPE.CUBOID,
                     position: [20, 20, 0],
-                    size: [10, 10, 50],
+                    size: [10, 10, 76],
                     style: helpers.brown
                 },
                 {
                     type: OBJECT_TYPE.CUBOID,
-                    position: [0, 0, 50],
+                    position: [0, 0, 77],
                     size: [50, 50, 50],
                     style: helpers.treeCanopy,
                 },
                 {
                     type: OBJECT_TYPE.CUBOID,
-                    position: [0, 0, 50],
+                    position: [0, 0, 77],
                     size: [50, 50, 50],
                     rotate: [130, 45, 0],
                     style: helpers.treeCanopy,

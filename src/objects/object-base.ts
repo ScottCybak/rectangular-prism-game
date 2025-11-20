@@ -1,54 +1,70 @@
 import { Coordinates } from "coordinates";
+import { objectMap } from "objects/object-map";
 import { TileController } from "tile-controller";
 import { Watched } from "watched";
+import { World } from "world";
 
 export interface ObjectBaseModel {
     position?: Coordinates;
     size?: Coordinates;
     rotate?: Coordinates;
+    label?: string;
 }
 
 export abstract class ObjectBase<T extends ObjectBaseModel> {
 
     abstract create(): this;
-    abstract doesPointIntersect(point: Coordinates, radius: number): boolean;
-    abstract containsPoint(point: Coordinates): boolean;
+    abstract doesPointIntersect(point: Coordinates, radius: number, height: number): boolean;
     abstract hideByCoordinates(point: Coordinates): boolean;
-    abstract recalculateDimensions(): void;
+    abstract canMoveOnto(to: Coordinates, radius: number, height: number): false | Coordinates;
+
+    label!: string;
 
     offscreen!: Watched<boolean>;
 
     width = 0;
     height = 0;
+    depth = 0;
     top = 0;
     left = 0;
+    base = 0;
 
     protected isHidden = new Watched(false);
     
-    protected element = document.createElement('div');
+    element = document.createElement('div');
     
-    constructor(public readonly data: T) {
-        const [x, y, z] = data.position ?? [0, 0, 0];
+    constructor(
+        public readonly data: T,
+        public world: World,
+    ) {
+        const pos = data.position ?? [0, 0, 0];
         const [width, height, depth] = data.size ?? [0, 0, 0];
         const [rx, ry, rz] = data.rotate ?? [0, 0, 0];
         const { element } = this;
+        objectMap.set(element, this);
         element.classList.add('object', `object-${(data as any).type}`);
         element.style.cssText = `
-            --x: ${this.left = x}px;
-            --y: ${this.top = y}px;
-            --z: ${z}px;
             --w: ${this.width = width}px;
             --l: ${this.height = height}px;
-            --h: ${depth}px;
+            --h: ${this.depth = depth}px;
             --neg-d: ${-depth}px;
             --r-x: ${rx}deg;
             --r-y: ${ry}deg;
             --r-z: ${rz}deg;
         `;
+        this.move(pos);
+        if (data.label) this.label = data.label;
 
         this.isHidden.watch(is => {
             this.element.classList[is ? 'add' : 'remove']('hidden');
         });
+    }
+
+    move(to: Coordinates) {
+        const { element } = this;
+        element.style.setProperty('--x', `${this.left = to[0]}px`);
+        element.style.setProperty('--y', `${this.top = to[1]}px`);
+        element.style.setProperty('--z', `${this.base = to[2]}px`);
     }
 
     place(appendAsChildTo: HTMLElement): this {
