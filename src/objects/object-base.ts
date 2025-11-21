@@ -14,9 +14,7 @@ export interface ObjectBaseModel {
 export abstract class ObjectBase<T extends ObjectBaseModel> {
 
     abstract create(): this;
-    abstract doesPointIntersect(point: Coordinates, radius: number, height: number): boolean;
     abstract hideByCoordinates(point: Coordinates): boolean;
-    abstract canMoveOnto(to: Coordinates, radius: number, height: number): false | Coordinates;
 
     label!: string;
 

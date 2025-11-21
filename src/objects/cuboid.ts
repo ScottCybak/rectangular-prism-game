@@ -27,42 +27,6 @@ export class CuboidObject extends ObjectBase<CuboidObjectModel> {
 
     private precomputedCuboid!: PrecomputedCuboid;
 
-    canMoveOnto(to: Coordinates, radius: number, height: number): false | Coordinates {
-        const { verticalStep } = this.world;
-        const intersecting = this.doesPointIntersect(to, radius, height);
-        if (intersecting) {
-            const { depth, base } = this;
-            const [x, y, z] = to;
-            const height = depth + base;
-            if (height - z <= verticalStep ) {
-                return [to[0], to[1], height];
-            }
-        }
-        return false;
-    }
-
-    doesPointIntersect(position: Coordinates, radius: number, height: number): boolean {
-        const feet: Coordinates = position;
-        const head: Coordinates = [position[0], position[1], position[2] + height]; // extend along Z (height)
-
-        const cuboid = this.precomputedCuboid;
-        const { center, halfSize, inverseRotationMatrix: R } = cuboid;
-
-        // Filter out cuboids entirely below the player's feet (height = Z axis)
-        const cuboidTop = center[2] + halfSize[2];
-        const feetZ = position[2];
-        if (cuboidTop < feetZ + 0.01) return false; // small margin
-
-        // Step 1 — transform capsule endpoints into cuboid LOCAL space
-        const p0 = worldToLocal(feet, center, R);
-        const p1 = worldToLocal(head, center, R);
-
-        // Step 2 — compute squared distance between segment (p0,p1) and AABB centered at origin
-        const distSq = segmentAABBDistanceSquared(p0, p1, halfSize);
-
-        return distSq <= radius * radius;
-    }
-
     containsPoint(playerPos: Coordinates): boolean {
         const { center, inverseRotationMatrix, halfSize } = this.precomputedCuboid
         const [px, py] = playerPos;

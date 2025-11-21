@@ -17,18 +17,6 @@ export class GroupObject extends ObjectBase<GroupObjectModel> {
         return [a - x, b - y, c - z];
     }
 
-    canMoveOnto(to: Coordinates, radius: number, height: number): false | Coordinates {
-        const adjustedTo = this.adjustPoint(to);
-
-        const match = this.loadedObjects
-            .map(o => o.canMoveOnto(adjustedTo, radius, height))
-            .find(o => !!o);
-        if (match) {
-            return match;
-        }
-        return false;
-    }
-
     recalculateDimensions(): void {
         const x = [0];
         const y = [0];
@@ -49,11 +37,6 @@ export class GroupObject extends ObjectBase<GroupObjectModel> {
         const hideGroups = !!(this.loadedObjects.filter(o => !(o instanceof GroupObject)).filter(o => o.hideByCoordinates(adjustedPoint)).length);
         this.loadedObjects.filter(o => o instanceof GroupObject).forEach(o => o.isHidden.set(hideGroups));
         return false;
-    }
-    
-    doesPointIntersect(point: Coordinates, radius: number, height: number): boolean {
-        const adjustedPoint = this.adjustPoint(point);
-        return this.loadedObjects.some(o => o.doesPointIntersect(adjustedPoint, radius, height));
     }
 
     create(): this {

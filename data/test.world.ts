@@ -1,7 +1,6 @@
 import { OBJECT_TYPE } from "objects/object-type";
 import { CuboidObjectModel } from "objects/cuboid";
 import { WorldData } from "world-data";
-import { CREATURE_TYPE } from "creatures/creature-type";
 
 const makeColorHelper = (color: string) => {
     const colorCss = `background: ${color};`;
@@ -45,20 +44,10 @@ export const testWorld: WorldData = {
     perspective: 1000,
     speed: [4, 10],
     playerRadius: 10,
-    avatar: {
-        type: CREATURE_TYPE.HUMANOID,
-        size: [22, 13, 76],
-        position: [0, 0, 0],
-    },
     zoom: [-400, 400],
     tileSize: 256,
     verticalStep: 8,
     objects: [
-        { // base
-            type: OBJECT_TYPE.FLOOR,
-            size: [12000, 10000, 0],
-            style: 'background: #348C31 ;'
-        },
         { // house
             type: OBJECT_TYPE.GROUP,
             label: 'house',
